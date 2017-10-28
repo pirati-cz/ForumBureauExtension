@@ -1,0 +1,33 @@
+#bureau-block {
+    border-radius: 5px;
+    margin: 10px 0 10px 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100px;
+    background: #cadceb;
+}
+
+#bureau-content {
+    margin: 0 10px 5px 10px;
+}
+
+h1.bureau {
+    color: #105289;
+    margin: 0 10px 0 10px;
+    padding: 10px 0 5px 0;
+}
+
+hr.bureau {
+    color: #ffffff;
+    border-color: #ffffff;
+    width: 100%;
+}
+
+h2.bureau {
+    color: #000000;
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+    font-weight: "bold";
+}
+
