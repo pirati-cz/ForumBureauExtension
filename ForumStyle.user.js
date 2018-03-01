@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
-// @version      0.1
+// @version      0.2
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/*
@@ -49,3 +49,9 @@ groupsList.attr("id", "ok_groupsList");
 groupsList.find("i").addClass("fa-user-plus").removeClass("fa-thumbs-o-up");
 navMain.append(groupsList);
 console.log("testik");
+
+$(".postbody .post-buttons .button span:contains('Upravit')").addClass("ok_showText");
+$(".postbody .post-buttons .button span:contains('Citace')").addClass("ok_showText");
+var thanksButton = $(".postbody .post-buttons .button span:contains('Poděkujte')");
+thanksButton.addClass("ok_showText");
+thanksButton.html(thanksButton.html().replace("Poděkujte", "Dík"));
