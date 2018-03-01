@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
-// @version      0.2
+// @version      0.3
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/*
@@ -48,10 +48,16 @@ groupsList.attr("href", "ucp.php?i=167");
 groupsList.attr("id", "ok_groupsList");
 groupsList.find("i").addClass("fa-user-plus").removeClass("fa-thumbs-o-up");
 navMain.append(groupsList);
-console.log("testik");
 
 $(".postbody .post-buttons .button span:contains('Upravit')").addClass("ok_showText");
 $(".postbody .post-buttons .button span:contains('Citace')").addClass("ok_showText");
 var thanksButton = $(".postbody .post-buttons .button span:contains('Poděkujte')");
 thanksButton.addClass("ok_showText");
 thanksButton.html(thanksButton.html().replace("Poděkujte", "Dík"));
+
+// Hotfix na odkazy v nadpisech
+$(".postbody").each(function() {
+  var correctUrl = $( this ).find("p.author").find("a:first").attr("href");
+  $( this ).find("h3").find("a").attr("href", correctUrl);
+});
+
