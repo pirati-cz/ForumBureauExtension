@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0
+// @version      1.0.1
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -12,6 +12,10 @@
 
 var DEBUG = true;
 
+// TRIGGER
+$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", FillTemplatesList);
+
+// FUNCTIONS
 function FillTemplatesList(data) {
   var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
   var templateListBox = $("<select></select>");
@@ -145,7 +149,3 @@ function Log(level, message) {
     console.log(datetime + " [" + level + "] " + message);
   }
 }
-
-
-// TRIGGER
-$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", FillTemplatesList);
