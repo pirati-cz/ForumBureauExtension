@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0.1
+// @version      1.0.2
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -40,8 +40,7 @@ function FillTemplatesList(data) {
         $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
      }
      else {
-        $("#postingbox #subject").val("");
-        $("#postingbox textarea").text("");
+        $("form#postform").trigger('reset');
      }
   });
   
@@ -71,6 +70,13 @@ function FillPostingboxWithTemplate(data) {
        FillNumValWithPadTag("#poll_length", "!anketa-delka-trvani:", lines);
        FillCheckboxWithPadTag("#poll_vote_change", "!anketa-povolit-zmenu-hlasu:", lines);
        FillCheckboxWithPadTag("#poll_show_results", "!anketa-zobrazit-vysledky:", lines);
+       
+       $("li#options-panel-tab.tab").removeClass("activetab");
+       $("li#attach-panel-tab.tab").removeClass("activetab");
+       $("li#poll-panel-tab.tab").addClass("activetab");
+       $("#options-panel").css("display", "none");
+       $("#attach-panel").css("display", "none");
+       $("#poll-panel").css("display", "block");
      }
     
      FillValWithPadTag("#postingbox #subject", "!predmet:", lines);
