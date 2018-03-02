@@ -1,61 +1,63 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0.2
+// @version      1.0.3
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
-// @require      https://raw.githubusercontent.com/ether/etherpad-lite-jquery-plugin/master/js/etherpad.js
 // @grant        none
 // ==/UserScript==
 
 var DEBUG = true;
+
+// COMPOSITION
+var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
+var templateListBox = $("<select></select>");
+var helplink = $("<a></a>");
+var hrline = $("<hr />");
+
+helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
+helplink.text("[?]");
+helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
+helplink.attr("target", "_blank");
+
+templateBox.find("label").text("Šablona:");
+templateBox.find("label").append(helplink);
+templateBox.find("input").remove();
+templateListBox.css("min-width", "335px");
+templateListBox.append($("<option />").val("").text(""));  
+templateListBox.attr("id", "bureau_select");
+
+templateListBox.on("change", function(){
+   if(this.value != "") {
+      $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
+   }
+   else {
+      $("form#postform").trigger('reset');
+   }
+});
+
+templateBox.append(templateListBox);
+templateBox.append(hrline);
+$("#postingbox dl").prepend(templateBox);
+
 
 // TRIGGER
 $.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", FillTemplatesList);
 
 // FUNCTIONS
 function FillTemplatesList(data) {
-  var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
-  var templateListBox = $("<select></select>");
   var lines = data.split("\n");
-  var helplink = $("<a></a>");
-  var hrline = $("<hr />");
-  
-  helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
-  helplink.text("[?]");
-  helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
-  helplink.attr("target", "_blank");
-  
-  templateBox.find("label").text("Šablona:");
-  templateBox.find("label").append(helplink);
-  templateBox.find("input").remove();
-  templateListBox.css("min-width", "335px");
-  templateListBox.append($("<option />").val("").text(""));  
-  templateListBox.attr("id", "bureau_select");
-  
-  templateListBox.on("change", function(){
-     if(this.value != "") {
-        $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
-     }
-     else {
-        $("form#postform").trigger('reset');
-     }
-  });
   
   for (i = 0; i < lines.length; i++) {
     if(lines[i] != "") {
       var pair = lines[i].split("|");
   
       Log("INFO", pair);
-      templateListBox.append($("<option />").val(pair[1]).text(pair[0])); 
+      $("#bureau_select").append($("<option />").val(pair[1]).text(pair[0])); 
     }
   }
-  
-  templateBox.append(templateListBox);
-  templateBox.append(hrline);
-  $("#postingbox dl").prepend(templateBox);
 }
 
 function FillPostingboxWithTemplate(data) {
