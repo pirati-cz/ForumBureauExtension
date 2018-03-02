@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
-// @version      0.32
+// @version      0.33
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/*
@@ -10,6 +10,10 @@
 // ==/UserScript==
 
 $("a.lastsubject").each(function() {
+  $( this ).text($( this).attr("title"));
+});
+
+$("a[itemprop='url']").each(function() {
   $( this ).text($( this).attr("title"));
 });
 
