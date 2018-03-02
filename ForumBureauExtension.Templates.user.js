@@ -1,63 +1,81 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0.3
+// @version      1.0.4
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
-// @require      http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
 
 var DEBUG = true;
 
-// COMPOSITION
-var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
-var templateListBox = $("<select></select>");
-var helplink = $("<a></a>");
-var hrline = $("<hr />");
-
-helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
-helplink.text("[?]");
-helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
-helplink.attr("target", "_blank");
-
-templateBox.find("label").text("Šablona:");
-templateBox.find("label").append(helplink);
-templateBox.find("input").remove();
-templateListBox.css("min-width", "335px");
-templateListBox.append($("<option />").val("").text(""));  
-templateListBox.attr("id", "bureau_select");
-
-templateListBox.on("change", function(){
-   if(this.value != "") {
-      $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
-   }
-   else {
-      $("form#postform").trigger('reset');
-   }
-});
-
-templateBox.append(templateListBox);
-templateBox.append(hrline);
-$("#postingbox dl").prepend(templateBox);
-
-
 // TRIGGER
+ComposeTemplateBlock();
 $.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", FillTemplatesList);
 
 // FUNCTIONS
+function ComposeTemplateBlock() {
+  var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
+  var templateListBox = $("<select></select>");
+  var helplink = $("<a></a>");
+  var hrline = $("<hr />");
+
+  $("head").append("<link href=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css\" rel=\"stylesheet\" />");
+
+  helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
+  helplink.text("[?]");
+  helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
+  helplink.attr("target", "_blank");
+
+  templateBox.find("label").text("Šablona:");
+  templateBox.find("label").append(helplink);
+  templateBox.find("input").remove();
+  templateListBox.css("min-width", "335px");
+  templateListBox.append($("<option />").val("").text("bez šablony"));  
+  templateListBox.attr("id", "bureau_select");
+
+  templateListBox.on("change", function(){
+     if(this.value != "") {
+        $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
+     }
+     else {
+        $("form#postform").trigger('reset');
+        $("li#options-panel-tab.tab").addClass("activetab");
+        $("li#attach-panel-tab.tab").removeClass("activetab");
+        $("li#poll-panel-tab.tab").removeClass("activetab");
+        $("#options-panel").css("display", "block");
+        $("#attach-panel").css("display", "none");
+        $("#poll-panel").css("display", "none");
+     }
+  });
+
+  templateBox.append(templateListBox);
+  templateBox.append(hrline);
+  $("#postingbox dl:contains('Předmět:')").prepend(templateBox);
+}
+ 
 function FillTemplatesList(data) {
   var lines = data.split("\n");
   
   for (i = 0; i < lines.length; i++) {
     if(lines[i] != "") {
-      var pair = lines[i].split("|");
-  
-      Log("INFO", pair);
-      $("#bureau_select").append($("<option />").val(pair[1]).text(pair[0])); 
+      if(lines[i].startsWith("#")) {
+        var value = lines[i].replace("#", "");
+        Log("INFO", value);
+        $("#bureau_select").append($("<optgroup />").attr("label", value)); 
+      }
+      else {
+        var pair = lines[i].split("|");  
+        Log("INFO", pair);
+        $("#bureau_select").append($("<option />").val(pair[1]).text(pair[0]));                              
+      }
     }
   }
+  $(document).ready(function() {
+    $("#bureau_select").select2();
+});
 }
 
 function FillPostingboxWithTemplate(data) {
@@ -66,12 +84,12 @@ function FillPostingboxWithTemplate(data) {
      // TODO: syntax engine na formuláře
      // 
      if(SearchStringInArray("!anketa", lines) > 0) {
-       FillValWithPadTag("#poll_title", "!anketa-otazka:", lines);
-       FillTextWithPadTag("#poll_option_text", "!anketa-moznosti:", lines);
-       FillNumValWithPadTag("#poll_max_options", "!anketa-max-moznosti:", lines);
-       FillNumValWithPadTag("#poll_length", "!anketa-delka-trvani:", lines);
-       FillCheckboxWithPadTag("#poll_vote_change", "!anketa-povolit-zmenu-hlasu:", lines);
-       FillCheckboxWithPadTag("#poll_show_results", "!anketa-zobrazit-vysledky:", lines);
+       FillValWithPadTag("#poll_title", "!anketa-otázka:", lines);
+       FillTextWithPadTag("#poll_option_text", "!anketa-možnosti:", lines);
+       FillNumValWithPadTag("#poll_max_options", "!anketa-max-možností:", lines);
+       FillNumValWithPadTag("#poll_length", "!anketa-délka-trvání:", lines);
+       FillCheckboxWithPadTag("#poll_vote_change", "!anketa-povolit-změnu-hlasu:", lines);
+       FillCheckboxWithPadTag("#poll_show_results", "!anketa-zobrazit-výsledky:", lines);
        
        $("li#options-panel-tab.tab").removeClass("activetab");
        $("li#attach-panel-tab.tab").removeClass("activetab");
@@ -80,8 +98,23 @@ function FillPostingboxWithTemplate(data) {
        $("#attach-panel").css("display", "none");
        $("#poll-panel").css("display", "block");
      }
+    else {
+       $("#poll_title").val("");
+       $("#poll_option_text").val("");
+       $("#poll_max_options").val("1");
+       $("#poll_length").val("0");
+       $("#poll_vote_change").prop('checked', false);
+       $("#poll_show_results").prop('checked', false);
+       
+       $("li#options-panel-tab.tab").addClass("activetab");
+       $("li#attach-panel-tab.tab").removeClass("activetab");
+       $("li#poll-panel-tab.tab").removeClass("activetab");
+       $("#options-panel").css("display", "block");
+       $("#attach-panel").css("display", "none");
+       $("#poll-panel").css("display", "none");
+    }
     
-     FillValWithPadTag("#postingbox #subject", "!predmet:", lines);
+     FillValWithPadTag("#postingbox #subject", "!předmět:", lines);
      FillTextWithPadTag("#postingbox textarea", "!obsah:", lines);
   }
   else {
