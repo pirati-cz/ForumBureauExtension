@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0.4
+// @version      1.0.41
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -28,6 +28,8 @@ function ComposeTemplateBlock() {
   helplink.text("[?]");
   helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
   helplink.attr("target", "_blank");
+  helplink.css("font-size","6.5pt");
+  helplink.css("margin-left", "5px");
 
   templateBox.find("label").text("Šablona:");
   templateBox.find("label").append(helplink);
