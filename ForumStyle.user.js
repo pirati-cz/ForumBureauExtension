@@ -1,3 +1,4 @@
+// @match        https://forum.pirati.cz/*
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
