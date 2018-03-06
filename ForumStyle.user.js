@@ -1,8 +1,7 @@
-// @match        https://forum.pirati.cz/*
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
-// @version      0.34
+// @version      0.35
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/*
@@ -64,11 +63,5 @@ if(thanksButton.length) {
 $("div.post").each(function(){
    var notice = $( this ).find("div.notice");
    $( this ).find("div.signature").append(notice);
-});
-
-// Hotfix na odkazy v nadpisech
-$(".postbody").each(function() {
-  var correctUrl = $( this ).find("p.author").find("a:first").attr("href");
-  $( this ).find("h3").find("a").attr("href", correctUrl);
 });
 
