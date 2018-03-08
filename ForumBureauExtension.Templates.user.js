@@ -201,7 +201,7 @@ function InjectTemplate() {
         value = value.replace(placeholder.charAt(placeholder.indexOf("|") +1), placeholder.charAt(placeholder.indexOf("|") +3));
         postingTextarea.val(postingTextareaValue.replace(placeholder, value));
   
-        alert(placeholder + "\n" + value);
+        Log("INFO", placeholder + "\t" + value);
       }
     }
   });
