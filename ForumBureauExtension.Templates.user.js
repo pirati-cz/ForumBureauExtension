@@ -93,9 +93,9 @@ function FillPostingboxWithTemplate(data) {
        FillWithText("#poll_title", "otazka", anketa);
        FillWithMultilineText("#poll_option_text", "moznost", anketa);
        FillWithNumber("#poll_max_options", "max-pocet-moznosti", anketa);     
-       FillWithNumber("#poll_length", "delka-trvani:", anketa);
-       FillWithBool("#poll_vote_change", "povolit-zmenu-hlasu:", anketa);
-       FillWithBool("#poll_show_results", "zobrazit-prubezne-vysledky:", anketa);
+       FillWithNumber("#poll_length", "delka-trvani", anketa);
+       FillWithBool("#poll_vote_change", "povolit-zmenu-hlasu", anketa);
+       FillWithBool("#poll_show_results", "zobrazit-prubezne-vysledky", anketa);
        
        $("li#options-panel-tab.tab").removeClass("activetab");
        $("li#attach-panel-tab.tab").removeClass("activetab");
@@ -130,6 +130,8 @@ function FillPostingboxWithTemplate(data) {
   }
 }
 
+
+/* helpers */
 function FillWithMultilineText(element, tag, lines) {
   if(lines.find(tag).length) {
     lines.find(tag).each(function() {
