@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.2.0.2
+// @version      1.3.0.4
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -11,13 +11,16 @@
 
 var DEBUG = true;
 
-// TRIGGER
+/* GLOBAL VARIABLES */
+var inputRow = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
+
+/* TRIGGER */
 ComposeTemplateBlock();
 $.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", LoadTemplatesList);
 
-// FUNCTIONS
+/* FUNCTIONS */
 function ComposeTemplateBlock() {
-  var templateBox = $("#postform #postingbox").find("dl:contains('Předmět:')").clone();
+  var templateBox = inputRow.clone();
   var templateListBox = $("<select></select>");
   var helplink = $("<a></a>");
   var hrline = $("<hr />");
@@ -39,13 +42,7 @@ function ComposeTemplateBlock() {
         $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
      }
      else {
-        $("form#postform").trigger('reset');
-        $("li#options-panel-tab.tab").addClass("activetab");
-        $("li#attach-panel-tab.tab").removeClass("activetab");
-        $("li#poll-panel-tab.tab").removeClass("activetab");
-        $("#options-panel").css("display", "block");
-        $("#attach-panel").css("display", "none");
-        $("#poll-panel").css("display", "none");
+        ResetForm();
      }
   });
 
@@ -77,7 +74,19 @@ function LoadTemplatesList(data) {
   });
 }
 
+function ResetForm() {
+  $("form#postform").trigger('reset');
+  $("li#options-panel-tab.tab").addClass("activetab");
+  $("li#attach-panel-tab.tab").removeClass("activetab");
+  $("li#poll-panel-tab.tab").removeClass("activetab");
+  $("#options-panel").css("display", "block");
+  $("#attach-panel").css("display", "none");
+  $("#poll-panel").css("display", "none");
+}
+
 function FillPostingboxWithTemplate(data) {
+  ResetForm();
+
   var xmlDoc = $.parseXML( data ),
   xml = $( xmlDoc );
   $title = xml.find("title" );
@@ -86,8 +95,14 @@ function FillPostingboxWithTemplate(data) {
 
 
   if(xml.find("sablona").length) {
-     // TODO: syntax engine na formuláře
-     // 
+     // formulare
+     $("#bureau_templates_form").remove();
+
+     if(xml.find("formular").length) {
+      ComposeFormBlock(xml.find("formular"));
+     }
+
+     // anketa
      if(xml.find("anketa").length) {
        var anketa = xml.find("anketa");
        FillWithText("#poll_title", "otazka", anketa);
@@ -120,6 +135,7 @@ function FillPostingboxWithTemplate(data) {
        $("#poll-panel").css("display", "none");
     }
     
+    // obsah
      FillWithText("#postingbox #subject", "predmet", xml);
      FillWithText("#postingbox textarea", "obsah", xml);
   }
@@ -130,8 +146,54 @@ function FillPostingboxWithTemplate(data) {
   }
 }
 
+function ComposeFormBlock(formular) {
+  var block = $("<div></div>");
+  var button = $("<input />");
 
-/* helpers */
+  block.attr("id", "bureau_templates_form");
+
+  formular.find("pole").each(function() {
+    var formBox = inputRow.clone();
+    var formInput = formBox.find("input");
+    
+    formBox.find("label").text($( this ).text());
+    
+    formInput.attr("type", $( this ).attr("typ"));
+    formInput.attr("name", $( this ).text());
+    formInput.attr("id", "bureau_template_form_" + $( this ).text());
+    formInput.addClass("bureau_template_form_input");
+    formInput.val("");
+
+    var attr = $( this ).attr("format");
+    if (typeof attr !== typeof undefined && attr !== false) {
+      formInput.attr("pattern", $( this ).attr("format"));
+      formInput.attr("title", $( this ).attr("format"));
+    }
+
+    button.attr("type", "button");
+    button.val("Naplnit šablonu hodnotami");
+    button.on("click", function() {
+      InjectTemplate()
+    });
+
+    block.append(formBox);
+  });
+
+  block.append(button);
+  block.append($("<hr />"));
+
+  $("#bureau_select").parent().append(block);
+}
+
+function InjectTemplate() {
+  $("#bureau_templates_form input.bureau_template_form_input").each(function() {
+    $("#postingbox #subject").val($("#postingbox #subject").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val())); 
+    $("#postingbox textarea").val($("#postingbox textarea").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val())); 
+  });
+}
+
+
+/* HELPERS */
 function FillWithMultilineText(element, tag, lines) {
   if(lines.find(tag).length) {
     lines.find(tag).each(function() {
@@ -177,13 +239,18 @@ function FillWithBool(element, tag, lines) {
 }
 
 
-// internal functions
+/* INTERNAL FUNCTIONS */
 function SearchStringInArray(str, strArray) {
   for (var j=0; j<strArray.length; j++) {
       if (strArray[j].match(str)) return j;
   }
   return -1;
 }
+
+String.prototype.replaceAll = function(search, replacement) {
+  var target = this;
+  return target.replace(new RegExp(search, 'g'), replacement);
+};
 
 Date.prototype.today = function () { 
     return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear();
