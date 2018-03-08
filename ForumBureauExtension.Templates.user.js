@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
+// @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
 
@@ -25,13 +26,11 @@ function ComposeTemplateBlock() {
   helplink.text("[?]");
   helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
   helplink.attr("target", "_blank");
-  helplink.css("font-size","6.5pt");
-  helplink.css("margin-left", "5px");
+  helplink.attr("id", "bureau_helplink");
 
   templateBox.find("label").text("Šablona:");
   templateBox.find("label").append(helplink);
   templateBox.find("input").remove();
-  templateListBox.css("min-width", "335px");
   templateListBox.append($("<option />").val("").text("bez šablony"));  
   templateListBox.attr("id", "bureau_select");
 
@@ -72,6 +71,10 @@ function LoadTemplatesList(data) {
       }
     }
   }
+
+  $(document).ready(function() {
+    $("#bureau_select").select2();
+  });
 }
 
 function FillPostingboxWithTemplate(data) {
