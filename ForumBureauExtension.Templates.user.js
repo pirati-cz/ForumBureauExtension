@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.0.5
+// @version      1.3.0.6
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -165,13 +165,13 @@ function ComposeFormBlock(formular) {
       formInput.attr("title", $( this ).attr("format"));
     }
 
-    button.attr("type", "button");
-    button.val("Naplnit šablonu hodnotami");
-    button.on("click", function() {
-      InjectTemplate()
-    });
-
     block.append(formBox);
+  });
+
+  button.attr("type", "button");
+  button.val("Naplnit šablonu hodnotami");
+  button.on("click", function() {
+    InjectTemplate()
   });
 
   block.append(button);
@@ -182,8 +182,28 @@ function ComposeFormBlock(formular) {
 
 function InjectTemplate() {
   $("#bureau_templates_form input.bureau_template_form_input").each(function() {
-    $("#postingbox #subject").val($("#postingbox #subject").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val())); 
-    $("#postingbox textarea").val($("#postingbox textarea").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val())); 
+    if($( this ).val() != "") {
+      var postingTextarea = $("#postingbox textarea");
+      var postingTextareaValue = postingTextarea.val();
+  
+      // nahrad vsechny placeholdery za hodnoty z formulare
+      $("#postingbox #subject").val($("#postingbox #subject").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
+      postingTextarea.val(postingTextareaValue.replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
+  
+      // TODO: refactor, use replaceAll
+      // placeholder ma nastaveny znaky pro replace, proved pred nahrazenim konverzi hodnoty
+      var placeholderWithReplacing = postingTextareaValue.indexOf("{" + $( this ).attr("name") + "|");
+      if(placeholderWithReplacing) {
+        var value = $( this ).val();
+        var placeholder = postingTextareaValue.substr(placeholderWithReplacing, placeholderWithReplacing + 4);
+        var replacingModifierPos = postingTextareaValue.lastIndexOf("{" + $( this ).attr("name") + "|");
+  
+        value = value.replace(placeholder.charAt(placeholder.indexOf("|") +1), placeholder.charAt(placeholder.indexOf("|") +3));
+        postingTextarea.val(postingTextareaValue.replace(placeholder, value));
+  
+        alert(placeholder + "\n" + value);
+      }
+    }
   });
 }
 
@@ -235,13 +255,6 @@ function FillWithBool(element, tag, lines) {
 
 
 /* INTERNAL FUNCTIONS */
-function SearchStringInArray(str, strArray) {
-  for (var j=0; j<strArray.length; j++) {
-      if (strArray[j].match(str)) return j;
-  }
-  return -1;
-}
-
 String.prototype.replaceAll = function(search, replacement) {
   var target = this;
   return target.replace(new RegExp(search, 'g'), replacement);
