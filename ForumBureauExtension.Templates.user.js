@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.0.41
+// @version      1.1.0
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
-// @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
 
@@ -13,7 +12,7 @@ var DEBUG = true;
 
 // TRIGGER
 ComposeTemplateBlock();
-$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", FillTemplatesList);
+$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", LoadTemplatesList);
 
 // FUNCTIONS
 function ComposeTemplateBlock() {
@@ -21,8 +20,6 @@ function ComposeTemplateBlock() {
   var templateListBox = $("<select></select>");
   var helplink = $("<a></a>");
   var hrline = $("<hr />");
-
-  $("head").append("<link href=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css\" rel=\"stylesheet\" />");
 
   helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
   helplink.text("[?]");
@@ -58,7 +55,7 @@ function ComposeTemplateBlock() {
   $("#postingbox dl:contains('Předmět:')").prepend(templateBox);
 }
  
-function FillTemplatesList(data) {
+function LoadTemplatesList(data) {
   var lines = data.split("\n");
   
   for (i = 0; i < lines.length; i++) {
@@ -75,9 +72,6 @@ function FillTemplatesList(data) {
       }
     }
   }
-  $(document).ready(function() {
-    $("#bureau_select").select2();
-});
 }
 
 function FillPostingboxWithTemplate(data) {
@@ -86,12 +80,12 @@ function FillPostingboxWithTemplate(data) {
      // TODO: syntax engine na formuláře
      // 
      if(SearchStringInArray("!anketa", lines) > 0) {
-       FillValWithPadTag("#poll_title", "!anketa-otázka:", lines);
-       FillTextWithPadTag("#poll_option_text", "!anketa-možnosti:", lines);
-       FillNumValWithPadTag("#poll_max_options", "!anketa-max-možností:", lines);
-       FillNumValWithPadTag("#poll_length", "!anketa-délka-trvání:", lines);
-       FillCheckboxWithPadTag("#poll_vote_change", "!anketa-povolit-změnu-hlasu:", lines);
-       FillCheckboxWithPadTag("#poll_show_results", "!anketa-zobrazit-výsledky:", lines);
+       FillWithText("#poll_title", "!anketa-otázka:", lines);
+       FillWithMultilineText("#poll_option_text", "!anketa-možnosti:", lines);
+       FillWithNumber("#poll_max_options", "!anketa-max-možností:", lines);
+       FillWithNumber("#poll_length", "!anketa-délka-trvání:", lines);
+       FillWithBool("#poll_vote_change", "!anketa-povolit-změnu-hlasu:", lines);
+       FillWithBool("#poll_show_results", "!anketa-zobrazit-výsledky:", lines);
        
        $("li#options-panel-tab.tab").removeClass("activetab");
        $("li#attach-panel-tab.tab").removeClass("activetab");
@@ -116,8 +110,8 @@ function FillPostingboxWithTemplate(data) {
        $("#poll-panel").css("display", "none");
     }
     
-     FillValWithPadTag("#postingbox #subject", "!předmět:", lines);
-     FillTextWithPadTag("#postingbox textarea", "!obsah:", lines);
+     FillWithText("#postingbox #subject", "!předmět:", lines);
+     FillWithMultilineText("#postingbox textarea", "!obsah:", lines);
   }
   else {
      $("#postingbox #subject").val(lines[0]); 
@@ -126,7 +120,7 @@ function FillPostingboxWithTemplate(data) {
   }
 }
 
-function FillTextWithPadTag(element, tag, lines) {
+function FillWithMultilineText(element, tag, lines) {
   if(SearchStringInArray(tag, lines) > 0) {
     var tagClose = tag.replace("!", "").replace(":", "!");
     var openingLine = SearchStringInArray(tag, lines) +1;
@@ -136,7 +130,7 @@ function FillTextWithPadTag(element, tag, lines) {
   }
 }
 
-function FillValWithPadTag(element, tag, lines) {
+function FillWithText(element, tag, lines) {
   if(SearchStringInArray(tag, lines) > 0) {
     var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
     Log("INFO", value);
@@ -144,7 +138,7 @@ function FillValWithPadTag(element, tag, lines) {
   }
 }
 
-function FillNumValWithPadTag(element, tag, lines) {
+function FillWithNumber(element, tag, lines) {
   if(SearchStringInArray(tag, lines) > 0) {
     var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
     if(value == "") {
@@ -155,7 +149,7 @@ function FillNumValWithPadTag(element, tag, lines) {
   }
 }
 
-function FillCheckboxWithPadTag(element, tag, lines) {
+function FillWithBool(element, tag, lines) {
   if(SearchStringInArray(tag, lines) > 0) {
     var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
     Log("INFO", value);
@@ -168,19 +162,19 @@ function FillCheckboxWithPadTag(element, tag, lines) {
   }  
 }
 
+
+// internal functions
 function SearchStringInArray(str, strArray) {
-    for (var j=0; j<strArray.length; j++) {
-        if (strArray[j].match(str)) return j;
-    }
-    return -1;
+  for (var j=0; j<strArray.length; j++) {
+      if (strArray[j].match(str)) return j;
+  }
+  return -1;
 }
 
-// For todays date;
 Date.prototype.today = function () { 
     return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear();
 }
 
-// For the time now
 Date.prototype.timeNow = function () {
      return ((this.getHours() < 10)?"0":"") + this.getHours() +":"+ ((this.getMinutes() < 10)?"0":"") + this.getMinutes() +":"+ ((this.getSeconds() < 10)?"0":"") + this.getSeconds();
 }
