@@ -42,6 +42,8 @@ function ComposeTemplateBlock() {
         $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
      }
      else {
+        $("form#postform").trigger('reset');
+        $("#bureau_templates_form").remove();
         ResetForm();
      }
   });
@@ -75,7 +77,12 @@ function LoadTemplatesList(data) {
 }
 
 function ResetForm() {
-  $("form#postform").trigger('reset');
+  $("#poll_title").val("");
+  $("#poll_option_text").val("");
+  $("#poll_max_options").val("1");
+  $("#poll_length").val("0");
+  $("#poll_vote_change").prop('checked', false);
+  $("#poll_show_results").prop('checked', false);
   $("li#options-panel-tab.tab").addClass("activetab");
   $("li#attach-panel-tab.tab").removeClass("activetab");
   $("li#poll-panel-tab.tab").removeClass("activetab");
@@ -120,19 +127,7 @@ function FillPostingboxWithTemplate(data) {
        $("#poll-panel").css("display", "block");
      }
     else {
-       $("#poll_title").val("");
-       $("#poll_option_text").val("");
-       $("#poll_max_options").val("1");
-       $("#poll_length").val("0");
-       $("#poll_vote_change").prop('checked', false);
-       $("#poll_show_results").prop('checked', false);
-       
-       $("li#options-panel-tab.tab").addClass("activetab");
-       $("li#attach-panel-tab.tab").removeClass("activetab");
-       $("li#poll-panel-tab.tab").removeClass("activetab");
-       $("#options-panel").css("display", "block");
-       $("#attach-panel").css("display", "none");
-       $("#poll-panel").css("display", "none");
+       ResetForm();
     }
     
     // obsah
