@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.0.3
+// @version      1.3.0.4
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -171,7 +171,7 @@ function ComposeFormBlock(formular) {
     }
 
     button.attr("type", "button");
-    button.val("Vyplnit šablonu");
+    button.val("Naplnit šablonu hodnotami");
     button.on("click", function() {
       InjectTemplate()
     });
