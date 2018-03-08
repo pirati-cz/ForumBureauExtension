@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.1.0
+// @version      1.2.0.2
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
+// @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
 
@@ -25,13 +26,11 @@ function ComposeTemplateBlock() {
   helplink.text("[?]");
   helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
   helplink.attr("target", "_blank");
-  helplink.css("font-size","6.5pt");
-  helplink.css("margin-left", "5px");
+  helplink.attr("id", "bureau_helplink");
 
   templateBox.find("label").text("Šablona:");
   templateBox.find("label").append(helplink);
   templateBox.find("input").remove();
-  templateListBox.css("min-width", "335px");
   templateListBox.append($("<option />").val("").text("bez šablony"));  
   templateListBox.attr("id", "bureau_select");
 
@@ -72,20 +71,31 @@ function LoadTemplatesList(data) {
       }
     }
   }
+
+  $(document).ready(function() {
+    $("#bureau_select").select2();
+  });
 }
 
 function FillPostingboxWithTemplate(data) {
+  var xmlDoc = $.parseXML( data ),
+  xml = $( xmlDoc );
+  $title = xml.find("title" );
+  
   var lines = data.split("\n");
-  if(lines[0] == "#šablona") {
+
+
+  if(xml.find("sablona").length) {
      // TODO: syntax engine na formuláře
      // 
-     if(SearchStringInArray("!anketa", lines) > 0) {
-       FillWithText("#poll_title", "!anketa-otázka:", lines);
-       FillWithMultilineText("#poll_option_text", "!anketa-možnosti:", lines);
-       FillWithNumber("#poll_max_options", "!anketa-max-možností:", lines);
-       FillWithNumber("#poll_length", "!anketa-délka-trvání:", lines);
-       FillWithBool("#poll_vote_change", "!anketa-povolit-změnu-hlasu:", lines);
-       FillWithBool("#poll_show_results", "!anketa-zobrazit-výsledky:", lines);
+     if(xml.find("anketa").length) {
+       var anketa = xml.find("anketa");
+       FillWithText("#poll_title", "otazka", anketa);
+       FillWithMultilineText("#poll_option_text", "moznost", anketa);
+       FillWithNumber("#poll_max_options", "max-pocet-moznosti", anketa);     
+       FillWithNumber("#poll_length", "delka-trvani", anketa);
+       FillWithBool("#poll_vote_change", "povolit-zmenu-hlasu", anketa);
+       FillWithBool("#poll_show_results", "zobrazit-prubezne-vysledky", anketa);
        
        $("li#options-panel-tab.tab").removeClass("activetab");
        $("li#attach-panel-tab.tab").removeClass("activetab");
@@ -110,8 +120,8 @@ function FillPostingboxWithTemplate(data) {
        $("#poll-panel").css("display", "none");
     }
     
-     FillWithText("#postingbox #subject", "!předmět:", lines);
-     FillWithMultilineText("#postingbox textarea", "!obsah:", lines);
+     FillWithText("#postingbox #subject", "predmet", xml);
+     FillWithText("#postingbox textarea", "obsah", xml);
   }
   else {
      $("#postingbox #subject").val(lines[0]); 
@@ -120,27 +130,29 @@ function FillPostingboxWithTemplate(data) {
   }
 }
 
+
+/* helpers */
 function FillWithMultilineText(element, tag, lines) {
-  if(SearchStringInArray(tag, lines) > 0) {
-    var tagClose = tag.replace("!", "").replace(":", "!");
-    var openingLine = SearchStringInArray(tag, lines) +1;
-    var closingLine = SearchStringInArray(tagClose, lines);
-    Log("INFO", lines.slice(openingLine, closingLine).join("\n"));
-    $(element).val(lines.slice(openingLine, closingLine).join("\n"));
+  if(lines.find(tag).length) {
+    lines.find(tag).each(function() {
+      $(element).val($(element).val() + $( this ).text() + "\n")
+      Log("INFO", $( this ).text());
+    });
   }
 }
 
 function FillWithText(element, tag, lines) {
-  if(SearchStringInArray(tag, lines) > 0) {
-    var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
-    Log("INFO", value);
-    $(element).val(value);
+  if(lines.find(tag).length) {
+    $(element).val(lines.find(tag).text());
+    Log("INFO", lines.find(tag).text());
   }
 }
 
 function FillWithNumber(element, tag, lines) {
-  if(SearchStringInArray(tag, lines) > 0) {
-    var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
+  if(lines.find(tag).length) {
+    var value = lines.find(tag).text();
+    $(element).val(lines.find(tag).text());
+
     if(value == "") {
       value = "0";
     }
@@ -150,9 +162,11 @@ function FillWithNumber(element, tag, lines) {
 }
 
 function FillWithBool(element, tag, lines) {
-  if(SearchStringInArray(tag, lines) > 0) {
-    var value = lines[SearchStringInArray(tag, lines)].replace(tag, "");
+  if(lines.find(tag).length) {
+    var value = lines.find(tag).text();
+
     Log("INFO", value);
+
     if(value == "ano") {
       $(element).prop('checked', true); 
     }
