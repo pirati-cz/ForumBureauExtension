@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.0.8
+// @version      1.3.0.9
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -184,25 +184,14 @@ function InjectTemplate() {
   $("#bureau_templates_form input.bureau_template_form_input").each(function() {
     if($( this ).val() != "") {
       var postingTextarea = $("#postingbox textarea");
-      var postingTextareaValue = postingTextarea.val();
   
       // nahrad vsechny placeholdery za hodnoty z formulare
       $("#postingbox #subject").val($("#postingbox #subject").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
-      postingTextarea.val(postingTextareaValue.replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
-  
-      // TODO: refactor, use replaceAll
-      // placeholder ma nastaveny znaky pro replace, proved pred nahrazenim konverzi hodnoty
-      var placeholderWithReplacing = postingTextareaValue.indexOf("{" + $( this ).attr("name") + "|");
-      if(placeholderWithReplacing) {
-        var value = $( this ).val();
-        var placeholder = postingTextareaValue.substr(placeholderWithReplacing, placeholderWithReplacing + 4);
-        var replacingModifierPos = postingTextareaValue.lastIndexOf("{" + $( this ).attr("name") + "|");
-  
-        value = value.replace(placeholder.charAt(placeholder.indexOf("|") +1), placeholder.charAt(placeholder.indexOf("|") +3));
-        postingTextarea.val(postingTextareaValue.replace(placeholder, value));
-  
-        Log("INFO", placeholder + "\t" + value);
-      }
+      postingTextarea.val(postingTextarea.val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
+
+      // nahrad vsechny placeholdery za hodnotu z formulare pro pouziti v url
+      var sanitizedValue = $( this ).val().replace(/[^\w\s]/gi, '_');
+      postingTextarea.val(postingTextarea.val().replaceAll("{" + $( this ).attr("name") + ":url}", sanitizedValue));
     }
   });
 }
