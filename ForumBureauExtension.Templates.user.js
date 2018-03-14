@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.2
+// @version      1.3.1.3
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -143,12 +143,12 @@ function FillPostingboxWithTemplate(data) {
   // Odebereme anketu a resetujeme panely
   ResetForm();
 
-  // Textový soubor zparsujeme jako XML
-  var xmlDoc = $.parseXML( data ),
-  xml = $( xmlDoc );
+  // pokud data jsou ve formátu XML
+  if(isXML(data)) {
+    // Textový soubor zparsujeme jako XML
+    var xmlDoc = $.parseXML( data ),
+    xml = $( xmlDoc );
 
-  // pokud XML obsahuje element <sablona>, použijeme tuto logiku
-  if(xml.find("sablona").length) {
     // inteligentní formuláře
     $("#bureau_templates_form").remove(); // skryj panel z minula
     if(xml.find("formular").length) { // pokud XML obsahuje element <formular>, přidej inteligentní formulář na stránku
@@ -313,6 +313,16 @@ function FillWithBool(element, tag, lines) {
 
 
 /* INTERNAL FUNCTIONS */
+function isXML(xml){
+  try {
+      xmlDoc = $.parseXML(xml); //is valid XML
+      return true;
+  } catch (err) {
+      // was not XML
+      return false;
+  }
+}
+
 // Nahraď všechny výskyty substringu ve stringu
 String.prototype.replaceAll = function(search, replacement) {
   var target = this;
