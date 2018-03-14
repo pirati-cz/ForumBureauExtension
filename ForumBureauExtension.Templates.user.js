@@ -8,6 +8,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
+// Používá spinner animaci od http://tobiasahlin.com/spinkit/
 
 var DEBUG = false; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
 
@@ -26,6 +27,7 @@ function ComposeTemplateBlock() {
   var templateListBox = $("<select></select>"); // vytvoříme nové objekty
   var helplink = $("<a></a>");
   var hrline = $("<hr />");
+  var spinner = $("<div></div>");
 
   // nastavíme obsah odkazu s nápovědou (link na wiki)
   helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
@@ -56,9 +58,31 @@ function ComposeTemplateBlock() {
      }
   });
 
+  // spinner (animace načítání)
+  spinner.addClass("sk-cube-grid");
+  
+  // přidáme elementy na spinner - potřebujeme 9 kostek
+  for (i = 1; i <= 9; i++) {
+    var cube = $("<div></div>");
+    cube.addClass("sk-cube");
+    cube.addClass("sk-cube" + i);
+
+    spinner.append(cube);
+  }
+
+  // nastavíme, aby se spinner zobrazoval a skrýval v závislosti na běžícím AJAX scriptu
+  spinner
+  .ajaxStart(function() {
+      $(this).css("display", "inline-block");
+  })
+  .ajaxStop(function() {
+      $(this).css("display", "none");
+  })
+
   templateBox.append(templateListBox); // přidat Select objekt do řádku "šablona"
+  templateBox.append(spinner); // přidat spinner (animace načítání)
   templateBox.append(hrline); // přidat oddělovací čáru po "šablony"
-  $("#postingbox dl:contains('Předmět:')").prepend(templateBox); // to celé přidat před řádek "předmět"
+  $("#postingbox dl:contains('Předmět:')").parent().prepend(templateBox); // to celé přidat před řádek "předmět"
 }
  
 // Loaduje seznam všech šablon z textového souboru
