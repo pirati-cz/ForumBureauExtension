@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.0
+// @version      1.3.1.3
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
 // @require      https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.full.min.js
 // @grant        none
 // ==/UserScript==
+// Používá spinner animaci od http://tobiasahlin.com/spinkit/
 
 var DEBUG = false; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
 
@@ -26,6 +27,7 @@ function ComposeTemplateBlock() {
   var templateListBox = $("<select></select>"); // vytvoříme nové objekty
   var helplink = $("<a></a>");
   var hrline = $("<hr />");
+  var spinner = $("<div></div>");
 
   // nastavíme obsah odkazu s nápovědou (link na wiki)
   helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
@@ -43,7 +45,11 @@ function ComposeTemplateBlock() {
   // akce OnChange na Select menu - loaduje šablonu nebo resetuje formulář pro příspěvek
   templateListBox.on("change", function(){
      if(this.value != "") {
-        $.get(this.value + "/export/txt", FillPostingboxWithTemplate);
+        var templateUrl = $($.parseHTML(this.value)).text(); // potlačíme XSS v URL šablony
+        templateUrl = templateUrl + "/export/txt"; // šablonu berem z padu, takže doplníme link pro export do textového souboru
+
+        // Načti XML šablonu
+        $.get(templateUrl, FillPostingboxWithTemplate);
      }
      else {
         $("form#postform").trigger('reset'); // proveď úplný reset formuláře
@@ -52,17 +58,40 @@ function ComposeTemplateBlock() {
      }
   });
 
+  // spinner (animace načítání)
+  spinner.addClass("sk-cube-grid");
+  
+  // přidáme elementy na spinner - potřebujeme 9 kostek
+  for (i = 1; i <= 9; i++) {
+    var cube = $("<div></div>");
+    cube.addClass("sk-cube");
+    cube.addClass("sk-cube" + i);
+
+    spinner.append(cube);
+  }
+
+  // nastavíme, aby se spinner zobrazoval a skrýval v závislosti na běžícím AJAX scriptu
+  spinner
+  .ajaxStart(function() {
+      $(this).css("display", "inline-block");
+  })
+  .ajaxStop(function() {
+      $(this).css("display", "none");
+  })
+
   templateBox.append(templateListBox); // přidat Select objekt do řádku "šablona"
+  templateBox.append(spinner); // přidat spinner (animace načítání)
   templateBox.append(hrline); // přidat oddělovací čáru po "šablony"
-  $("#postingbox dl:contains('Předmět:')").prepend(templateBox); // to celé přidat před řádek "předmět"
+  $("#postingbox dl:contains('Předmět:')").parent().prepend(templateBox); // to celé přidat před řádek "předmět"
 }
  
 // Loaduje seznam všech šablon z textového souboru
 function LoadTemplatesList(data) {
+  data = $($.parseHTML(data)).text(); // potlačíme XSS
   var lines = data.split("\n"); // každý řádek souboru jako prvek seznamu
   
   for (i = 0; i < lines.length; i++) {
-    // pokud řádek není prázdný (ty fungují jen jnako oddělovače)
+    // pokud řádek není prázdný (ty fungují jen jako vizuální oddělovače)
     if(lines[i] != "") {
       // pokud řádek začíná symbolem '#', použije se hodnota jako název kategorie
       if(lines[i].startsWith("#")) {
@@ -114,50 +143,53 @@ function FillPostingboxWithTemplate(data) {
   // Odebereme anketu a resetujeme panely
   ResetForm();
 
-  // Textový soubor zprasujeme jako XML
-  var xmlDoc = $.parseXML( data ),
-  xml = $( xmlDoc );
+  // pokud data jsou ve formátu XML
+  if(isXML(data)) {
+    // Textový soubor zparsujeme jako XML
+    var xmlDoc = $.parseXML( data ),
+    xml = $( xmlDoc );
 
-  // pokud XML obsahuje element <sablona>, použijeme tuto logiku
-  if(xml.find("sablona").length) {
-     // inteligentní formuláře
-     $("#bureau_templates_form").remove(); // skryj panel z minula
-     if(xml.find("formular").length) { // pokud XML obsahuje element <formular>, přidej inteligentní formulář na stránku
+    // inteligentní formuláře
+    $("#bureau_templates_form").remove(); // skryj panel z minula
+    if(xml.find("formular").length) { // pokud XML obsahuje element <formular>, přidej inteligentní formulář na stránku
       ComposeFormBlock(xml.find("formular")); // jako argument odešli pouze subset XML souboru v elementu <formular>
-     }
+    }
 
      // pokud XML obsahuje element <anketa>, vyplň hodnoty ankety
-     if(xml.find("anketa").length) {
-       var anketa = xml.find("anketa");
-       FillWithText("#poll_title", "otazka", anketa);
-       FillWithMultilineText("#poll_option_text", "moznost", anketa);
-       FillWithNumber("#poll_max_options", "max-pocet-moznosti", anketa);     
-       FillWithNumber("#poll_length", "delka-trvani", anketa);
-       FillWithBool("#poll_vote_change", "povolit-zmenu-hlasu", anketa);
-       FillWithBool("#poll_show_results", "zobrazit-prubezne-vysledky", anketa);
+    if(xml.find("anketa").length) {
+      var anketa = xml.find("anketa");
+      FillWithText("#poll_title", "otazka", anketa);
+      FillWithMultilineText("#poll_option_text", "moznost", anketa);
+      FillWithNumber("#poll_max_options", "max-pocet-moznosti", anketa);     
+      FillWithNumber("#poll_length", "delka-trvani", anketa);
+      FillWithBool("#poll_vote_change", "povolit-zmenu-hlasu", anketa);
+      FillWithBool("#poll_show_results", "zobrazit-prubezne-vysledky", anketa);
        
-       // zobraz panel ankety
-       $("li#options-panel-tab.tab").removeClass("activetab");
-       $("li#attach-panel-tab.tab").removeClass("activetab");
-       $("li#poll-panel-tab.tab").addClass("activetab");
-       $("#options-panel").css("display", "none");
-       $("#attach-panel").css("display", "none");
-       $("#poll-panel").css("display", "block");
+      // zobraz panel ankety
+      $("li#options-panel-tab.tab").removeClass("activetab");
+      $("li#attach-panel-tab.tab").removeClass("activetab");
+      $("li#poll-panel-tab.tab").addClass("activetab");
+      $("#options-panel").css("display", "none");
+      $("#attach-panel").css("display", "none");
+      $("#poll-panel").css("display", "block");
      }
     // Pokud XML neobsahuje element <anketa>, odebereme anketu a resetujeme panely
     else {
-       ResetForm();
+      ResetForm();
     }
     
     // obsah
-     FillWithText("#postingbox #subject", "predmet", xml); // vyplníme předmět hodnotou elementu <predmet> z XML
-     FillWithText("#postingbox textarea", "obsah", xml); // vyplníme obsah příspěvku hodnotou elementu <obsah> z XML
+    FillWithText("#postingbox #subject", "predmet", xml); // vyplníme předmět hodnotou elementu <predmet> z XML
+    FillWithText("#postingbox textarea", "obsah", xml); // vyplníme obsah příspěvku hodnotou elementu <obsah> z XML
   }
   // pokud soubor není XML nebo neobsahuje pole <sablona>
   else {
-     $("#postingbox #subject").val(lines[0]);  // předmět příspěvku naplň prvním řádkem ze souboru
-     $("#postingbox textarea").val(lines.join("\n")); // obsah příspěvku naplň celý obsahem souboru
-     Log("INFO", lines)
+    data = $($.parseHTML(data)).text(); // potlačíme XSS
+    var lines = data.split("\n"); // každý řádek souboru jako prvek seznamu
+
+    $("#postingbox #subject").val(lines[0]);  // předmět příspěvku naplň prvním řádkem ze souboru
+    $("#postingbox textarea").val(data); // obsah příspěvku naplň celým obsahem souboru
+    Log("INFO", lines)
   }
 }
 
@@ -233,8 +265,9 @@ function InjectTemplate() {
 function FillWithMultilineText(element, tag, lines) {
   if(lines.find(tag).length) {
     lines.find(tag).each(function() {
-      $(element).val($(element).val() + $( this ).text() + "\n")
-      Log("INFO", $( this ).text());
+      var value = $( this ).text(); // .text() potlačí XSS
+      $(element).val($(element).val() + value + "\n")
+      Log("INFO", value);
     });
   }
 }
@@ -242,16 +275,17 @@ function FillWithMultilineText(element, tag, lines) {
 // Vyplň hodnotu elementu hodnotou z XML souboru (text je jednořádkový)
 function FillWithText(element, tag, lines) {
   if(lines.find(tag).length) {
-    $(element).val(lines.find(tag).text());
-    Log("INFO", lines.find(tag).text());
+    var value = lines.find(tag).text(); // .text() potlačí XSS
+    $(element).val(value);
+    Log("INFO", value);
   }
 }
 
 // Vyplň hodnotu elementu hodnotou z XML souboru (text je číslo, prázdný string nahraď 0)
 function FillWithNumber(element, tag, lines) {
   if(lines.find(tag).length) {
-    var value = lines.find(tag).text();
-    $(element).val(lines.find(tag).text());
+    var value = lines.find(tag).text(); // .text() potlačí XSS
+    $(element).val(value);
 
     if(value == "") {
       value = "0";
@@ -264,7 +298,7 @@ function FillWithNumber(element, tag, lines) {
 // Zaškrtni/odškrtni element hodnotou z XML souboru (ano = checked, ne = unchecked)
 function FillWithBool(element, tag, lines) {
   if(lines.find(tag).length) {
-    var value = lines.find(tag).text();
+    var value = lines.find(tag).text(); // .text() potlačí XSS
 
     Log("INFO", value);
 
@@ -279,6 +313,16 @@ function FillWithBool(element, tag, lines) {
 
 
 /* INTERNAL FUNCTIONS */
+function isXML(xml){
+  try {
+      xmlDoc = $.parseXML(xml); //is valid XML
+      return true;
+  } catch (err) {
+      // was not XML
+      return false;
+  }
+}
+
 // Nahraď všechny výskyty substringu ve stringu
 String.prototype.replaceAll = function(search, replacement) {
   var target = this;
