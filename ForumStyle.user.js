@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pirati phpBB style
 // @namespace    http://pirati.cz/
-// @version      0.36
+// @version      0.37
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/*
@@ -45,7 +45,7 @@ thanksList.attr("id", "ok_thanksList");
 navMain.append(thanksList);
 
 
-var groupsList = thanksList.clone();
+var groupsList = modPanel.clone();
 groupsList.find("span").text("Nastavit zobrazovaná fóra");
 groupsList.attr("href", "https://forum.pirati.cz/ucp.php?i=167");
 groupsList.attr("id", "ok_groupsList");
