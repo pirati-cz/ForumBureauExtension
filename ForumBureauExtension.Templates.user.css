@@ -17,10 +17,22 @@
         margin-left: 15em;
     }
 
+    #bureau_templates_format_buttons {
+        margin-top: 5px;
+    }
+
+    #bureau_templates_format_buttons button {
+        font-size: 7.5pt;
+    }
+
     .bureau_select_container {
         display: inline-block;
         position: relative;
         top: -5px;
+    }
+
+    .bureau_templates_format_button_url {
+        margin-right: 10px;
     }
 
     /* spinner http://tobiasahlin.com/spinkit/ */
@@ -29,7 +41,7 @@
         height: 12px;
         margin: 0 0 0 10px;
         display: none;
-        transition: visibility 0s, opacity 0.5s linear;
+        transition: all 0.7s ease-in-out;
     }
       
     .sk-cube-grid .sk-cube {
