@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.3
+// @version      1.3.1.5
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -30,7 +30,7 @@ function ComposeTemplateBlock() {
   var spinner = $("<div></div>");
 
   // nastavíme obsah odkazu s nápovědou (link na wiki)
-  helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki");
+  helplink.attr("href", "https://github.com/pirati-cz/ForumBureauExtension/wiki/Pou%C5%BE%C3%ADv%C3%A1n%C3%AD-%C5%A1ablon");
   helplink.text("[?]");
   helplink.attr("title", "Nabídka šablon pro rutinní úlohy. Pro více informací klikněte.");
   helplink.attr("target", "_blank");
@@ -53,7 +53,8 @@ function ComposeTemplateBlock() {
      }
      else {
         $("form#postform").trigger('reset'); // proveď úplný reset formuláře
-        $("#bureau_templates_form").remove(); // odstraň blok se šablonou
+        $("#bureau_templates_form").remove(); // odstraň blok s inteligentním formulářem
+        $("#bureau_templates_format_buttons").remove(); // odstraň s tlačítky placeholderů z inteligentního formuláře
         ResetForm(); // Odebereme anketu a resetujeme panely
      }
   });
@@ -151,6 +152,8 @@ function FillPostingboxWithTemplate(data) {
 
     // inteligentní formuláře
     $("#bureau_templates_form").remove(); // skryj panel z minula
+    $("#bureau_templates_format_buttons").remove(); // odstraň s tlačítky placeholderů z inteligentního formuláře
+
     if(xml.find("formular").length) { // pokud XML obsahuje element <formular>, přidej inteligentní formulář na stránku
       ComposeFormBlock(xml.find("formular")); // jako argument odešli pouze subset XML souboru v elementu <formular>
     }
@@ -198,9 +201,11 @@ function ComposeFormBlock(formular) {
   // nové prvky
   var block = $("<div></div>");
   var button = $("<input />");
+  var placeholderButtonsBox = $("<div></div>");
 
   // přidáme ID pro blok kvůli CSS stylům
   block.attr("id", "bureau_templates_form");
+  placeholderButtonsBox.attr("id", "bureau_templates_format_buttons");
 
   // z XML souboru vyber všechny elementy <pole>
   formular.find("pole").each(function() {
@@ -224,11 +229,45 @@ function ComposeFormBlock(formular) {
 
     // připoj blok formuláře do nového bloku
     block.append(formBox);
+
+    // Placeholder - stejně jako na fóru fungují tlačítka "bold", "underline" apod. přidávající bbtagy do příspěvku, přidáme si čudliky na doplnění hodnoty z inteligentního formuláře
+    var placeholderButton = $("#format-buttons button.bbcode-youtube").clone(); // naklonujeme si tlačítko "youtube" na plnění placeholderů do příspěvku
+
+    placeholderButton.removeClass("bbcode-youtube");
+    placeholderButton.attr("name", $( this ).text());
+    placeholderButton.val($( this ).text()); //  tlačítku pro přidání placeholdera změníme text na název pole
+    placeholderButton.text($( this ).text()); // tlačítku nastavíme i odpovídající text
+
+    placeholderButton.attr("onclick", ""); // vymažeme původní onclick akci
+
+    // chceme se chovat jako při kliknutí na tlačítko "bold"
+    placeholderButton.on("click", function() {
+      InsertPlaceholderIntoContent($( this ).text(), false);
+    });
+
+    // vlož tlačítka do boxu
+    placeholderButtonsBox.append(placeholderButton);
+
+
+    // pro pole co nejsou url nabídni tlačítko s modifikátorem pro použití v url
+    if($( this ).attr("typ") != "url") {
+      var placeholderUrlModifierButton = placeholderButton.clone(); // naklonujeme si hotový čudlík a vyrobíme si další pro použití modifikátoru :url
+      placeholderUrlModifierButton.text(":url");
+      placeholderUrlModifierButton.addClass("bureau_templates_format_button_url");
+
+      // přidáme akci onclick
+      placeholderUrlModifierButton.on("click", function() {
+        InsertPlaceholderIntoContent(placeholderButton.text(), true);
+      });
+      placeholderButtonsBox.append(placeholderUrlModifierButton); // připojíme tlačítko hned za minulé
+    }    
   });
+
 
   // Přidáme čudlik na naplnění šablony hodnotami pomocí OnClick akce
   button.attr("type", "button");
-  button.val("Naplnit šablonu hodnotami");
+  button.attr("id", "bureau_templates_inject_button");
+  button.val("Vložit hodnoty do příspěvku");
   button.on("click", function() {
     InjectTemplate()
   });
@@ -238,6 +277,25 @@ function ComposeFormBlock(formular) {
   block.append($("<hr />")); // a oddělíme čárou
 
   $("#bureau_select").parent().append(block); // celý block přidáme za dropdown se seznamem šablon
+
+  $("#format-buttons").append(placeholderButtonsBox); // za existující formátovací tlačítka přidej naše nová pro vkládání placeholderů
+}
+
+// Funkce pro vložení placeholdera inteligentního fomruláře tlačítkem, tak jako se přidávají bbtagy ve fóru
+function InsertPlaceholderIntoContent(text, urlModifier) {
+  var placeholderValue = urlModifier ? "{" + text + ":url}" : "{" + text + "}"; // vyrobíme si placeholder pro vložení do příspěvku
+  var postingTextarea = $("#postingbox textarea"); // pole obsahu příspěvku
+  var cursorPosition = postingTextarea.prop("selectionStart"); // zjistíme kde je kurzor pro vložení placeholdera
+  
+  // sestavíme nový obsah příspěvku rozdělením v místě kurzoru a vložením našeho placeholdera
+  var newContent = [postingTextarea.val().slice(0, cursorPosition), placeholderValue, postingTextarea.val().slice(cursorPosition)].join('');
+  postingTextarea.val(newContent); // a vložíme do pole
+
+  // nyní chceme stejně jako phpBB ponechat kurzor v poli za námi přidaným placeholderem
+  cursorPosition = cursorPosition + placeholderValue.length; // nastavíme novou pozici
+  postingTextarea.prop("selectionStart", cursorPosition);  //nastavíme oba konce označení na naši pozici
+  postingTextarea.prop("selectionEnd", cursorPosition);
+  postingTextarea.focus(); // aktivujeme pole obsahu příspěvku
 }
 
 // Naplň šablonu hodnotami z inteligentního formuláře
@@ -252,8 +310,8 @@ function InjectTemplate() {
       $("#postingbox #subject").val($("#postingbox #subject").val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
       postingTextarea.val(postingTextarea.val().replaceAll("{" + $( this ).attr("name") + "}", $( this ).val()));
 
-      // nahraď všechny placeholdery s modifikátorem :rul za hodnoty z formuláře
-      var sanitizedValue = $( this ).val().replace(/[^\w\s]/gi, '_'); // odfiltruj nebezpečné znaky
+      // nahraď všechny placeholdery s modifikátorem :url za hodnoty z formuláře
+      var sanitizedValue = $( this ).val().replace(/[^\w]/gi, '_'); // odfiltruj nebezpečné znaky
       postingTextarea.val(postingTextarea.val().replaceAll("{" + $( this ).attr("name") + ":url}", sanitizedValue));
     }
   });
