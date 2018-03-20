@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.5
+// @version      1.3.1.6
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -244,6 +244,11 @@ function ComposeFormBlock(formular) {
     placeholderButton.on("click", function() {
       InsertPlaceholderIntoContent($( this ).text(), false);
     });
+    
+    // pokud jde o pole s typem url, přidáme styl
+    if($( this ).attr("typ") == "url") {
+      placeholderButton.addClass("bureau_templates_format_button_url");
+    }
 
     // vlož tlačítka do boxu
     placeholderButtonsBox.append(placeholderButton);
