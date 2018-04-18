@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.6
+// @version      1.4.0.0
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -10,7 +10,7 @@
 // ==/UserScript==
 // Používá spinner animaci od http://tobiasahlin.com/spinkit/
 
-var DEBUG = false; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
+var DEBUG = true; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
 
 /* GLOBAL VARIABLES */
 var inputRow = $("#postform #postingbox").find("dl:contains('Předmět:')").clone(); // vycházíme z řádku "předmět"
@@ -40,23 +40,33 @@ function ComposeTemplateBlock() {
   templateBox.find("label").append(helplink); // přidáme odkaz na wiki
   templateBox.find("input").remove(); // odstraníme z klonu textové pole pro název příspěvku
   templateListBox.append($("<option />").val("").text("bez šablony"));  // do nového objektu Select přidáme první možnost "bez šablony"
+  templateListBox.append($("<option />").val("create").text("vytvořit novou šablonu"));
   templateListBox.attr("id", "bureau_select"); //nastavíme selectu ID
 
   // akce OnChange na Select menu - loaduje šablonu nebo resetuje formulář pro příspěvek
   templateListBox.on("change", function(){
-     if(this.value != "") {
-        var templateUrl = $($.parseHTML(this.value)).text(); // potlačíme XSS v URL šablony
+    var templateUrl = $($.parseHTML(this.value)).text(); // potlačíme XSS v URL šablony
+
+    switch (templateUrl) {
+      case "":
+        $("form#postform").trigger('reset'); // proveď úplný reset formuláře
+        RemoveIntelForm(); // Odebereme inteligentní formulář
+        ResetElectionAndPanels(); // Odebereme anketu a resetujeme panely
+        break;
+     case "create":
+        // proveď lehký reset formuláře
+        $("#postingbox #subject").val('');  // předmět příspěvku nastav na prázdný
+        $("#postingbox textarea").val(''); // obsah příspěvku nastav na prázdný
+        RemoveIntelForm(); // Odebereme inteligentní formulář
+        ResetElectionAndPanels(); // Odebereme anketu a resetujeme panely
+        
+        break;
+    default:
         templateUrl = templateUrl + "/export/txt"; // šablonu berem z padu, takže doplníme link pro export do textového souboru
 
         // Načti XML šablonu
         $.get(templateUrl, FillPostingboxWithTemplate);
-     }
-     else {
-        $("form#postform").trigger('reset'); // proveď úplný reset formuláře
-        $("#bureau_templates_form").remove(); // odstraň blok s inteligentním formulářem
-        $("#bureau_templates_format_buttons").remove(); // odstraň s tlačítky placeholderů z inteligentního formuláře
-        ResetForm(); // Odebereme anketu a resetujeme panely
-     }
+    }
   });
 
   // spinner (animace načítání)
@@ -116,7 +126,7 @@ function LoadTemplatesList(data) {
 }
 
 // Vymaže obsah ankety a vrátí zobrazení panelů na default
-function ResetForm() {
+function ResetElectionAndPanels() {
   // vrať pole ankety do původního stavu
   $("#poll_title").val(""); // předmět ankety = ""
   $("#poll_option_text").val(""); // možnosti ankety = ""
@@ -138,11 +148,16 @@ function ResetForm() {
   $("#options-panel").css("display", "block");
 }
 
+function RemoveIntelForm() {
+  $("#bureau_templates_form").remove(); // odstraň blok s inteligentním formulářem
+  $("#bureau_templates_format_buttons").remove(); // odstraň s tlačítky placeholderů z inteligentního formuláře
+}
+
 
 // Naplň formulář pro nový příspěvek obsahem šablony
 function FillPostingboxWithTemplate(data) {
   // Odebereme anketu a resetujeme panely
-  ResetForm();
+  ResetElectionAndPanels();
 
   // pokud data jsou ve formátu XML
   if(isXML(data)) {
@@ -151,8 +166,7 @@ function FillPostingboxWithTemplate(data) {
     xml = $( xmlDoc );
 
     // inteligentní formuláře
-    $("#bureau_templates_form").remove(); // skryj panel z minula
-    $("#bureau_templates_format_buttons").remove(); // odstraň s tlačítky placeholderů z inteligentního formuláře
+    RemoveIntelForm();
 
     if(xml.find("formular").length) { // pokud XML obsahuje element <formular>, přidej inteligentní formulář na stránku
       ComposeFormBlock(xml.find("formular")); // jako argument odešli pouze subset XML souboru v elementu <formular>
@@ -178,7 +192,7 @@ function FillPostingboxWithTemplate(data) {
      }
     // Pokud XML neobsahuje element <anketa>, odebereme anketu a resetujeme panely
     else {
-      ResetForm();
+      ResetElectionAndPanels();
     }
     
     // obsah
