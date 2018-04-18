@@ -17,7 +17,7 @@ var inputRow = $("#postform #postingbox").find("dl:contains('Předmět:')").clon
 
 /* TRIGGER */
 ComposeTemplateBlock();
-$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", LoadTemplatesList); // stahni textový soubor z padu se seznamem šablon
+$.get("https://sablony.pirati.cz/forum/_seznam_sablon.txt", LoadTemplatesList); // stahni textový soubor z padu se seznamem šablon
 
 /* FUNCTIONS */
 
@@ -62,7 +62,7 @@ function ComposeTemplateBlock() {
         
         break;
     default:
-        templateUrl = templateUrl + "/export/txt"; // šablonu berem z padu, takže doplníme link pro export do textového souboru
+        templateUrl = "https://sablony.pirati.cz/forum/" + templateUrl; // šablonu bereme z githubu
 
         // Načti XML šablonu
         $.get(templateUrl, FillPostingboxWithTemplate);
