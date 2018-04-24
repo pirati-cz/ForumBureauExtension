@@ -146,9 +146,7 @@ function FillPostingboxWithTemplate(data) {
 
   // pokud data jsou ve formátu XML
   if(isXML(data)) {
-    // Textový soubor zparsujeme jako XML
-    var xmlDoc = $.parseXML( data ),
-    xml = $( xmlDoc );
+    var xml = $(data);
 
     // inteligentní formuláře
     $("#bureau_templates_form").remove(); // skryj panel z minula
