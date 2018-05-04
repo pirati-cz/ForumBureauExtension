@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Forum Bureau extension - Templates
 // @namespace    http://pirati.cz/
-// @version      1.3.1.6
+// @version      1.3.2.0
 // @description  Extention for Stylish script on forum.pirati.cz
 // @author       Ondrej Kotas
 // @match        https://forum.pirati.cz/posting.php?mode=post*
@@ -10,14 +10,14 @@
 // ==/UserScript==
 // Používá spinner animaci od http://tobiasahlin.com/spinkit/
 
-var DEBUG = false; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
+var DEBUG = true; // nastav na true, pokud chceš v konzoli prohlížeče vidět debug hlášky
 
 /* GLOBAL VARIABLES */
 var inputRow = $("#postform #postingbox").find("dl:contains('Předmět:')").clone(); // vycházíme z řádku "předmět"
 
 /* TRIGGER */
 ComposeTemplateBlock();
-$.get("https://pad.pirati.cz/p/bureau_template_list/export/txt", LoadTemplatesList); // stahni textový soubor z padu se seznamem šablon
+$.get("https://sablony.pirati.cz/forum/_seznam_sablon.txt", LoadTemplatesList); // stahni textový soubor z padu se seznamem šablon
 
 /* FUNCTIONS */
 
@@ -46,7 +46,7 @@ function ComposeTemplateBlock() {
   templateListBox.on("change", function(){
      if(this.value != "") {
         var templateUrl = $($.parseHTML(this.value)).text(); // potlačíme XSS v URL šablony
-        templateUrl = templateUrl + "/export/txt"; // šablonu berem z padu, takže doplníme link pro export do textového souboru
+        templateUrl = "https://sablony.pirati.cz/forum/" + templateUrl; // šablonu berem z padu, takže doplníme link pro export do textového souboru
 
         // Načti XML šablonu
         $.get(templateUrl, FillPostingboxWithTemplate);
@@ -146,9 +146,7 @@ function FillPostingboxWithTemplate(data) {
 
   // pokud data jsou ve formátu XML
   if(isXML(data)) {
-    // Textový soubor zparsujeme jako XML
-    var xmlDoc = $.parseXML( data ),
-    xml = $( xmlDoc );
+    var xml = $(data);
 
     // inteligentní formuláře
     $("#bureau_templates_form").remove(); // skryj panel z minula
